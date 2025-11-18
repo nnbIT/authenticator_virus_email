@@ -1,0 +1,3 @@
+"""
+Initialize main application package.
+"""
