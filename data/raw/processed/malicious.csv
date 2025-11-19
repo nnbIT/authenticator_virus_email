@@ -1,0 +1,27 @@
+url	label	domain	tld	has_ip	num_subdomains	url_length	num_params	contains_keywords	entropy	path_length	special_chars	is_https
+http://login.free-gift.cn/bank/verify,1,free-gift,cn,0,1,38,0,3,4.80,2,2,0												
+http://192.168.1.55/paypal-login/verify.php,1,192.168.1.55,null,1,0,42,0,2,4.21,2,5,0												
+http://secure-paypal-update.ru/account/confirm,1,paypal-update,ru,0,2,55,1,3,4.92,3,4,0												
+http://login.free-gift.cn/bank/verify,1,free-gift,cn,0,1,38,0,3,4.80,2,2,0												
+												
+												
+												
+				Column Name	Type	Description						
+				url	string	Full URL as received.						
+				label	0 or 1	1 = malicious, 0 = benign.						
+				domain	string	Extracted domain (paypal.com).						
+				tld	string	.com, .co, .org, .ru, etc.						
+				has_ip	0/1	1 if URL uses raw IP instead of domain.						
+				num_subdomains	int	Count of subdomains (a.b.c.example.com ? 4).						
+				url_length	int	Length of entire URL.						
+				num_params	int	Number of query parameters (?a=1&b=2 ? 2).						
+				contains_keywords	int	Number of suspicious words found in the URL.						
+				entropy	float	Shannon entropy ? detects obfuscated or random URLs.						
+				path_length	int	Number of folders in path (/login/update ? 2).						
+				special_chars	int	Count of special symbols (@, %, ?, =) used for phishing.						
+				is_https	0/1	1 if HTTPS, 0 if HTTP.						
+				has_suspicious_tld	0/1	TLD is in list of bad domains (.ru, .tk, .ml…).						
+				digits_count	int	Malware URLs often include many digits.						
+				uppercase_count	int	Uppercase letters often used in obfuscation.						
+				is_shortened	0/1	Detects shorteners like bit.ly, tinyurl.com, t.co.						
+				hostname_length	int	Length of domain + subdomains.						
