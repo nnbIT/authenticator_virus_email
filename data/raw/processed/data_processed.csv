@@ -1,0 +1,3 @@
+url,domain,tld,has_ip,num_subdomains,url_length,num_params,contains_keywords,entropy,path_length,special_chars,is_https,label
+http://example.com/login,example.com,com,0,1,24,0,1,3.886842188131012,1,0,0,1
+https://www.google.com/search?q=traductor&rlz=1C1UEAD_esCO1003CO1003&oq=tra&gs_lcrp=EgZjaHJvbWUqDggAEEUYJxg7GIAEGIoFMg4IABBFGCcYOxiABBiKBTIGCAEQRRhAMgwIAhBFGDkYsQMYgAQyDAgDECMYJxiABBiKBTIKCAQQABixAxiABDIGCAUQRRg8MgYIBhBFGD0yBggHEEUYPdIBBzc5NGowajSoAgCwAgE&sourceid=chrome&ie=UTF-8,www.google.com,com,0,2,280,6,0,5.510637632915014,1,6,1,0
