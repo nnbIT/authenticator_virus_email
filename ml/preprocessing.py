@@ -13,7 +13,7 @@ def process_dataset():
     # Load dataset (Excel or CSV)
     df = pd.read_excel(RAW_DATA)
 
-    # Ensure required columns exist
+
     if "url" not in df.columns or "label" not in df.columns:
         raise ValueError("❌ data.xlsx must contain 'url' and 'label' columns")
 
@@ -25,7 +25,7 @@ def process_dataset():
         url = row["url"]
         label = row["label"]
 
-        # Skip missing or invalid URLs
+
         if not isinstance(url, str) or url.strip() == "" or pd.isna(url):
             print(f"Skipping invalid URL at row {i}: {url}")
             continue
@@ -39,10 +39,10 @@ def process_dataset():
             print(f"⚠️ Error processing row {i}: {e}")
             continue
 
-    # Convert to DataFrame
+
     processed_df = pd.DataFrame(processed_rows)
 
-    # Save processed output
+
     processed_df.to_csv(PROCESSED_DATA, index=False)
     print(f"✅ Processing complete! Saved to:\n{PROCESSED_DATA}")
 
