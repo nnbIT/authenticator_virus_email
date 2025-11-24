@@ -18,7 +18,7 @@ def train_model():
     if "label" not in df.columns:
         raise ValueError("❌ 'label' column missing in processed dataset")
 
-    # Keep only numeric columns
+    # Only numeric columns
     df_numeric = df.select_dtypes(include=['number'])
 
     # Split features and labels
