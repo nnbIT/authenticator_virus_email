@@ -16,7 +16,7 @@ def evaluate_model():
     if "label" not in df.columns:
         raise ValueError("❌ 'label' column missing in processed dataset")
 
-    # Same cleanup as training
+
     X = df.drop(columns=["label", "url", "domain", "tld"])
     y = df["label"]
 
