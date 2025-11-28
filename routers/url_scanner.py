@@ -8,16 +8,13 @@ import pandas as pd
 from ml.feature_extraction import extract_features   # ML feature extractor
 from pathlib import Path
 
-router = APIRouter(prefix="/url", tags=["URL Scanner"])
+router = APIRouter(prefix="/url/", tags=["URL Scanner"])
 
 # Load ML model once at startup
 MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "model.pkl"
 ml_model = joblib.load(MODEL_PATH)
-
-
 class URLInput(BaseModel):
     url: HttpUrl
-
 
 # -----------------------------
 # SIMPLE HEURISTIC FILTER
@@ -113,6 +110,7 @@ def heuristic_risk_score(url: str) -> dict:
 def ml_predict(url: str) -> dict:
     """
     Convert URL → features → ML prediction.
+    Uses pre-loaded model (FAST! ⚡)
     """
     features = extract_features(url)
 
@@ -123,14 +121,14 @@ def ml_predict(url: str) -> dict:
     if "url" in df.columns:
         df = df.drop(columns=["url", "domain", "tld"], errors="ignore")
 
+    # ✅ Use pre-loaded model (FAST!)
     prediction = ml_model.predict(df)[0]
     probability = ml_model.predict_proba(df)[0][1]
 
     return {
         "prediction": int(prediction),
         "probability": float(probability),
-        "classification":
-            "⚠️ Malicious (ML)" if prediction == 1 else "🟢 Safe (ML)"
+        "classification": "⚠️ Malicious (ML)" if prediction == 1 else "🟢 Safe (ML)"
     }
 
 
