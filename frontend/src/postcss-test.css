@@ -1,0 +1,7 @@
+/* Test if PostCSS plugins work */
+.test {
+  display: flex;
+}
+::placeholder {
+  color: red;
+}
