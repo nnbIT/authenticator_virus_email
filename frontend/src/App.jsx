@@ -1,11 +1,14 @@
+// src/App.jsx
+import Scanner from './components/Scanner';
+
 function App() {
   return (
-    <div style={{backgroundColor: 'orange', padding: '20px'}}>
-      <h1 style={{color: 'white', fontSize: '24px'}}>
-        🟠 If ORANGE = Basic React works (no Tailwind)
-      </h1>
+    <div className="min-h-screen bg-gray-100 py-8">
+      <div className="container mx-auto px-4">
+        <Scanner />
+      </div>
     </div>
   );
 }
 
-export default App;
+export default App; 
