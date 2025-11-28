@@ -1,8 +1,13 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* TEST: If you see YELLOW, CSS is loading */
+/* MANUAL TEST - If this works, CSS is processing */
 body {
-  background-color: yellow !important;
+  background-color: pink !important;
+  font-size: 30px !important;
 }
