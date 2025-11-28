@@ -7,51 +7,61 @@ SUSPICIOUS_KEYWORDS = [
     "paypal", "bank", "confirm", "free", "gift", "bonus"
 ]
 
+
+IP_PATTERN = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
+
 def shannon_entropy(text: str) -> float:
-    """Calculate Shannon entropy used to detect randomness/obfuscation."""
+    """Calculate Shannon entropy - optimized version"""
     if not text:
         return 0.0
 
-    probabilities = [float(text.count(c)) / len(text) for c in dict.fromkeys(list(text))]
-    entropy = - sum([p * math.log(p, 2) for p in probabilities])
+
+    text_length = len(text)
+    if text_length == 0:
+        return 0.0
+
+    char_counts = {}
+    for char in text:
+        char_counts[char] = char_counts.get(char, 0) + 1
+
+    entropy = 0.0
+    for count in char_counts.values():
+        probability = count / text_length
+        entropy -= probability * math.log(probability, 2)
 
     return entropy
 
-
 def extract_features(url: str) -> dict:
-    """Extracts ML features from a URL."""
+    """Extracts ML features from a URL - OPTIMIZED VERSION ⚡"""
     parsed = urlparse(url.lower())
-
     domain = parsed.netloc
     path = parsed.path
 
-    # Features
-    tld = domain.split(".")[-1] if "." in domain else ""
-    has_ip = 1 if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain) else 0
-    num_subdomains = domain.count(".")
-    url_length = len(url)
-    query = parse_qs(parsed.query)
-    num_params = len(query)
-    contains_keywords = sum(1 for k in SUSPICIOUS_KEYWORDS if k in url)
-    entropy_score = shannon_entropy(url)
-    path_parts = [p for p in path.split("/") if p]
-    path_length = len(path_parts)
-    special_chars = sum(url.count(c) for c in "@%=")
-    is_https = 1 if parsed.scheme == "https" else 0
 
-    return {
+    domain_parts = domain.split(".")
+    tld = domain_parts[-1] if len(domain_parts) > 1 else ""
+
+
+    has_ip = 1 if IP_PATTERN.match(domain) else 0
+
+
+    url_lower = url.lower()
+    contains_keywords = sum(1 for keyword in SUSPICIOUS_KEYWORDS if keyword in url_lower)
+
+
+    features = {
         "url": url,
         "domain": domain,
         "tld": tld,
         "has_ip": has_ip,
-        "num_subdomains": num_subdomains,
-        "url_length": url_length,
-        "num_params": num_params,
+        "num_subdomains": domain.count("."),
+        "url_length": len(url),
+        "num_params": len(parse_qs(parsed.query)),
         "contains_keywords": contains_keywords,
-        "entropy": entropy_score,
-        "path_length": path_length,
-        "special_chars": special_chars,
-        "is_https": is_https,
+        "entropy": shannon_entropy(url),
+        "path_length": len([p for p in path.split("/") if p]),
+        "special_chars": sum(url.count(c) for c in "@%="),
+        "is_https": 1 if parsed.scheme == "https" else 0,
     }
 
-
+    return features
