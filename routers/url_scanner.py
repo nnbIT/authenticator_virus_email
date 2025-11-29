@@ -4,15 +4,22 @@ from urllib.parse import urlparse
 import re
 import joblib
 import pandas as pd
-
-from ml.feature_extraction import extract_features   # ML feature extractor
 from pathlib import Path
 
-router = APIRouter(prefix="/url/", tags=["URL Scanner"])
+from ml.feature_extraction import extract_features
 
-# Load ML model once at startup
+# ✅ FIX: Remove trailing slash from prefix
+router = APIRouter(prefix="/url", tags=["URL Scanner"])
+
+# Load ML model once at startup with error handling
 MODEL_PATH = Path(__file__).resolve().parent.parent / "ml" / "model.pkl"
-ml_model = joblib.load(MODEL_PATH)
+try:
+    ml_model = joblib.load(MODEL_PATH)
+    print("✅ ML model loaded successfully")
+except Exception as e:
+    ml_model = None
+    print(f"❌ Failed to load ML model: {e}")
+
 class URLInput(BaseModel):
     url: HttpUrl
 
@@ -39,7 +46,6 @@ def calculate_risk(url: str) -> float:
         risk += 15
 
     return min(risk, 100)
-
 
 # -----------------------------
 # ADVANCED HEURISTIC FILTER
@@ -103,34 +109,44 @@ def heuristic_risk_score(url: str) -> dict:
         "reasons": reasons
     }
 
-
 # -----------------------------
 # MACHINE LEARNING FILTER
 # -----------------------------
 def ml_predict(url: str) -> dict:
     """
-    Convert URL → features → ML prediction.
-    Uses pre-loaded model (FAST! ⚡)
+    Convert URL → features → ML prediction with error handling
     """
-    features = extract_features(url)
+    try:
+        if ml_model is None:
+            return {
+                "prediction": -1,
+                "probability": 0.0,
+                "classification": "❌ ML Model Not Available",
+                "error": "ML model failed to load"
+            }
 
-    # Convert to DataFrame (ML model expects tabular format)
-    df = pd.DataFrame([features])
+        features = extract_features(url)
+        df = pd.DataFrame([features])
 
-    # Remove non-numeric columns
-    if "url" in df.columns:
-        df = df.drop(columns=["url", "domain", "tld"], errors="ignore")
+        if "url" in df.columns:
+            df = df.drop(columns=["url", "domain", "tld"], errors="ignore")
 
-    # ✅ Use pre-loaded model (FAST!)
-    prediction = ml_model.predict(df)[0]
-    probability = ml_model.predict_proba(df)[0][1]
+        prediction = ml_model.predict(df)[0]
+        probability = ml_model.predict_proba(df)[0][1]
 
-    return {
-        "prediction": int(prediction),
-        "probability": float(probability),
-        "classification": "⚠️ Malicious (ML)" if prediction == 1 else "🟢 Safe (ML)"
-    }
+        return {
+            "prediction": int(prediction),
+            "probability": float(probability),
+            "classification": "⚠️ Malicious (ML)" if prediction == 1 else "🟢 Safe (ML)"
+        }
 
+    except Exception as e:
+        return {
+            "prediction": -1,
+            "probability": 0.0,
+            "classification": f"❌ ML Error: {str(e)}",
+            "error": True
+        }
 
 # -----------------------------
 # FINAL ROUTE: RETURN ALL FILTERS TOGETHER
@@ -158,4 +174,13 @@ async def scan_url(data: URLInput):
             "advanced_heuristic": advanced_risk,
             "machine_learning": ml_result
         }
+    }
+
+# ✅ ADD: Test endpoint to verify the API is working
+@router.get("/test")
+async def test_endpoint():
+    return {
+        "status": "✅ URL Scanner is working!",
+        "endpoint": "POST /scan/url",
+        "ml_model_loaded": ml_model is not None
     }
