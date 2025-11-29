@@ -24,7 +24,7 @@ const Scanner = () => {
         url: url
       });
 
-      // ✅ FIX: Better response validation
+
       if (response.data && response.data.filters) {
         setResults(response.data);
         setScanHistory(prev => [response.data, ...prev.slice(0, 9)]); // Keep last 10 scans
@@ -45,7 +45,214 @@ const Scanner = () => {
     }
   };
 
-  // ✅ FIX: Safe stats calculation
+// START 3 FILTERS
+const [filters, setFilters] = useState({
+  riskLevel: 'all', // 'all', 'malicious', 'safe'
+  tld: 'all',       // 'all', 'com', 'org', 'net', etc.
+  dateRange: 'all'  // 'all', 'today', 'week', 'month', 'custom'
+});
+
+const [customDateRange, setCustomDateRange] = useState({
+  startDate: '',
+  endDate: ''
+});
+// Add this FilterBar component inside your Scanner.jsx, before the results section
+const FilterBar = ({ filters, setFilters, customDateRange, setCustomDateRange }) => {
+  return (
+    <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-800 mb-3">🔍 Filter Results</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* RISK LEVEL FILTER */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Risk Level
+          </label>
+          <select
+            value={filters.riskLevel}
+            onChange={(e) => setFilters(prev => ({ ...prev, riskLevel: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Results</option>
+            <option value="malicious">⚠️ Malicious Only</option>
+            <option value="safe">🟢 Safe Only</option>
+          </select>
+        </div>
+
+        {/* TLD FILTER */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Top Level Domain
+          </label>
+          <select
+            value={filters.tld}
+            onChange={(e) => setFilters(prev => ({ ...prev, tld: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All TLDs</option>
+            <option value="com">.com</option>
+            <option value="org">.org</option>
+            <option value="net">.net</option>
+            <option value="io">.io</option>
+            <option value="edu">.edu</option>
+            <option value="gov">.gov</option>
+            <option value="other">Other TLDs</option>
+          </select>
+        </div>
+
+        {/* DATE RANGE FILTER */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Date Range
+          </label>
+          <select
+            value={filters.dateRange}
+            onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+      </div>
+
+      {/* CUSTOM DATE RANGE INPUTS */}
+      {filters.dateRange === 'custom' && (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={customDateRange.startDate}
+              onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={customDateRange.endDate}
+              onChange={(e) => setCustomDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Filter function to apply all filters to scanHistory
+const getFilteredResults = () => {
+  return scanHistory.filter(scan => {
+    const scanDate = new Date(scan.timestamp || Date.now());
+    const now = new Date();
+
+    // Risk Level Filter
+    if (filters.riskLevel !== 'all') {
+      const isMalicious = scan.filters?.machine_learning?.prediction === 1;
+      if (filters.riskLevel === 'malicious' && !isMalicious) return false;
+      if (filters.riskLevel === 'safe' && isMalicious) return false;
+    }
+
+    // TLD Filter
+    if (filters.tld !== 'all') {
+      const url = scan.url || '';
+      const tld = url.split('.').pop() || '';
+
+      if (filters.tld === 'other') {
+        const commonTlds = ['com', 'org', 'net', 'io', 'edu', 'gov'];
+        if (commonTlds.includes(tld)) return false;
+      } else if (tld !== filters.tld) {
+        return false;
+      }
+    }
+
+    // Date Range Filter
+    if (filters.dateRange !== 'all') {
+      const timeDiff = now - scanDate;
+      const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+      switch (filters.dateRange) {
+        case 'today':
+          if (daysDiff > 1) return false;
+          break;
+        case 'week':
+          if (daysDiff > 7) return false;
+          break;
+        case 'month':
+          if (daysDiff > 30) return false;
+          break;
+        case 'custom':
+          if (customDateRange.startDate && scanDate < new Date(customDateRange.startDate)) return false;
+          if (customDateRange.endDate && scanDate > new Date(customDateRange.endDate)) return false;
+          break;
+        default:
+          break;
+      }
+    }
+
+    return true;
+  });
+};
+
+// Use filtered results for stats
+const filteredResults = getFilteredResults();
+
+const stats = {
+  total: filteredResults.length,
+  malicious: filteredResults.filter(r =>
+    r.filters?.machine_learning?.prediction === 1
+  ).length,
+  safe: filteredResults.filter(r =>
+    r.filters?.machine_learning?.prediction === 0
+  ).length,
+};
+
+stats.detectionRate = stats.total > 0 ?
+  ((stats.malicious / stats.total) * 100).toFixed(1) : 0;
+
+  // In handleScan function, when setting results:
+if (response.data && response.data.filters) {
+  const resultWithTimestamp = {
+    ...response.data,
+    timestamp: new Date().toISOString() // Add timestamp
+  };
+  setResults(resultWithTimestamp);
+  setScanHistory(prev => [resultWithTimestamp, ...prev.slice(0, 49)]); // Keep last 50 scans
+}
+return (
+  <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+    {/* SCANNER INPUT - keep your existing code */}
+    <div className="mb-8">
+      {/* Your existing scanner input code */}
+    </div>
+
+    {/* ✅ ADD FILTER BAR HERE */}
+    {scanHistory.length > 0 && (
+      <FilterBar
+        filters={filters}
+        setFilters={setFilters}
+        customDateRange={customDateRange}
+        setCustomDateRange={setCustomDateRange}
+      />
+    )}
+
+    {/* REST OF YOUR EXISTING CODE */}
+    {/* ... */}
+  </div>
+);
+
+//END TRY TO 3 FILTERS
+
   const stats = {
     total: scanHistory.length,
     malicious: scanHistory.filter(r =>
@@ -73,7 +280,7 @@ const Scanner = () => {
             value={url}
             onChange={(e) => {
               setUrl(e.target.value);
-              setError(null); // Clear error when typing
+              setError(null);
             }}
             placeholder="Enter URL to scan (e.g., https://example.com)"
             className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
