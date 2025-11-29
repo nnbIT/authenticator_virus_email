@@ -11,13 +11,13 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  # Your React frontend
-    allow_credentials=True, 
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Register routers
-app.include_router(url_scanner.router, prefix="/scan/url", tags=["URL Scanner"])
+app.include_router(url_scanner.router, prefix="/scan", tags=["URL Scanner"])
 app.include_router(file_scanner.router, prefix="/scan/file", tags=["File Scanner"])
 app.include_router(email_scanner.router, prefix="/scan/email", tags=["Email Scanner"])
 
