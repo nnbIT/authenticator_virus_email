@@ -8,45 +8,8 @@ const Scanner = () => {
   const [results, setResults] = useState(null);
   const [scanHistory, setScanHistory] = useState([]);
   const [error, setError] = useState(null);
-
-  const handleScan = async () => {
-    if (!url.trim()) {
-      setError('Please enter a URL');
-      return;
-    }
-
-    setScanning(true);
-    setError(null);
-    setResults(null);
-
-    try {
-      const response = await axios.post('http://localhost:8000/scan/url/', {
-        url: url
-      });
-
-
-      if (response.data && response.data.filters) {
-        setResults(response.data);
-        setScanHistory(prev => [response.data, ...prev.slice(0, 9)]); // Keep last 10 scans
-      } else {
-        throw new Error('Invalid response structure from server');
-      }
-
-    } catch (error) {
-      console.error('Scan failed:', error);
-      setError(
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.message ||
-        'Scan failed. Please check if backend is running on port 8000.'
-      );
-    } finally {
-      setScanning(false);
-    }
-  };
-
-// START 3 FILTERS
-const [filters, setFilters] = useState({
+    //try 1
+    const [filters, setFilters] = useState({
   riskLevel: 'all', // 'all', 'malicious', 'safe'
   tld: 'all',       // 'all', 'com', 'org', 'net', etc.
   dateRange: 'all'  // 'all', 'today', 'week', 'month', 'custom'
@@ -56,6 +19,7 @@ const [customDateRange, setCustomDateRange] = useState({
   startDate: '',
   endDate: ''
 });
+
 // Add this FilterBar component inside your Scanner.jsx, before the results section
 const FilterBar = ({ filters, setFilters, customDateRange, setCustomDateRange }) => {
   return (
@@ -203,56 +167,45 @@ const getFilteredResults = () => {
     return true;
   });
 };
+    //end try 1
 
-// Use filtered results for stats
-const filteredResults = getFilteredResults();
+  const handleScan = async () => {
+    if (!url.trim()) {
+      setError('Please enter a URL');
+      return;
+    }
 
-const stats = {
-  total: filteredResults.length,
-  malicious: filteredResults.filter(r =>
-    r.filters?.machine_learning?.prediction === 1
-  ).length,
-  safe: filteredResults.filter(r =>
-    r.filters?.machine_learning?.prediction === 0
-  ).length,
-};
+    setScanning(true);
+    setError(null);
+    setResults(null);
 
-stats.detectionRate = stats.total > 0 ?
-  ((stats.malicious / stats.total) * 100).toFixed(1) : 0;
+    try {
+      const response = await axios.post('http://localhost:8000/scan/url/', {
+        url: url
+      });
 
-  // In handleScan function, when setting results:
-if (response.data && response.data.filters) {
-  const resultWithTimestamp = {
-    ...response.data,
-    timestamp: new Date().toISOString() // Add timestamp
+      // ✅ FIX: Better response validation
+      if (response.data && response.data.filters) {
+        setResults(response.data);
+        setScanHistory(prev => [response.data, ...prev.slice(0, 9)]); // Keep last 10 scans
+      } else {
+        throw new Error('Invalid response structure from server');
+      }
+
+    } catch (error) {
+      console.error('Scan failed:', error);
+      setError(
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        'Scan failed. Please check if backend is running on port 8000.'
+      );
+    } finally {
+      setScanning(false);
+    }
   };
-  setResults(resultWithTimestamp);
-  setScanHistory(prev => [resultWithTimestamp, ...prev.slice(0, 49)]); // Keep last 50 scans
-}
-return (
-  <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-    {/* SCANNER INPUT - keep your existing code */}
-    <div className="mb-8">
-      {/* Your existing scanner input code */}
-    </div>
 
-    {/* ✅ ADD FILTER BAR HERE */}
-    {scanHistory.length > 0 && (
-      <FilterBar
-        filters={filters}
-        setFilters={setFilters}
-        customDateRange={customDateRange}
-        setCustomDateRange={setCustomDateRange}
-      />
-    )}
-
-    {/* REST OF YOUR EXISTING CODE */}
-    {/* ... */}
-  </div>
-);
-
-//END TRY TO 3 FILTERS
-
+  // ✅ FIX: Safe stats calculation
   const stats = {
     total: scanHistory.length,
     malicious: scanHistory.filter(r =>
@@ -280,7 +233,7 @@ return (
             value={url}
             onChange={(e) => {
               setUrl(e.target.value);
-              setError(null);
+              setError(null); // Clear error when typing
             }}
             placeholder="Enter URL to scan (e.g., https://example.com)"
             className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
