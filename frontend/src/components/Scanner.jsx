@@ -205,22 +205,32 @@ const getFilteredResults = () => {
     }
   };
 
-  // ✅ FIX: Safe stats calculation
-  const stats = {
-    total: scanHistory.length,
-    malicious: scanHistory.filter(r =>
-      r.filters?.machine_learning?.prediction === 1
-    ).length,
-    safe: scanHistory.filter(r =>
-      r.filters?.machine_learning?.prediction === 0
-    ).length,
-  };
+
+ const filteredResults = getFilteredResults();
+
+const stats = {
+  total: filteredResults.length,
+  malicious: filteredResults.filter(r =>
+    r.filters?.machine_learning?.prediction === 1
+  ).length,
+  safe: filteredResults.filter(r =>
+    r.filters?.machine_learning?.prediction === 0
+  ).length,
+};
 
   stats.detectionRate = stats.total > 0 ?
     ((stats.malicious / stats.total) * 100).toFixed(1) : 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+      {scanHistory.length > 0 && (
+      <FilterBar
+        filters={filters}
+        setFilters={setFilters}
+        customDateRange={customDateRange}
+        setCustomDateRange={setCustomDateRange}
+      />
+    )}
       {/* SCANNER INPUT */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
