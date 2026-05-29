@@ -6,9 +6,8 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-PROCESSED_DATA = BASE_DIR / "data" / "raw" / "processed" / "data_processed.csv"
+PROCESSED_DATA = BASE_DIR /"backend" / "data" / "raw" / "processed" / "data_processed.csv"
 MODEL_PATH = BASE_DIR / "ml" / "model.pkl"
-
 
 def train_model():
     print(f"📌 Loading processed dataset from: {PROCESSED_DATA}")

@@ -112,11 +112,13 @@ def heuristic_risk_score(url: str) -> dict:
 # -----------------------------
 # MACHINE LEARNING FILTER
 # -----------------------------
+
 def ml_predict(url: str) -> dict:
     """
     Convert URL → features → ML prediction with error handling
     """
     try:
+        # Check model availability FIRST
         if ml_model is None:
             return {
                 "prediction": -1,
@@ -125,12 +127,22 @@ def ml_predict(url: str) -> dict:
                 "error": "ML model failed to load"
             }
 
+        # Extract features once
         features = extract_features(url)
-        df = pd.DataFrame([features])
+        print(f"\n[DEBUG] URL: {url}")
+        print(f"[DEBUG] Features: {features}")
 
+        # Convert to DataFrame
+        df = pd.DataFrame([features])
+        print(f"[DEBUG] DataFrame columns: {df.columns.tolist()}")
+        print(f"[DEBUG] DataFrame dtypes:\n{df.dtypes}")
+
+        # Remove non-numeric columns
         if "url" in df.columns:
             df = df.drop(columns=["url", "domain", "tld"], errors="ignore")
+            print(f"[DEBUG] After dropping: {df.columns.tolist()}")
 
+        # Predict
         prediction = ml_model.predict(df)[0]
         probability = ml_model.predict_proba(df)[0][1]
 
@@ -141,6 +153,7 @@ def ml_predict(url: str) -> dict:
         }
 
     except Exception as e:
+        print(f"[ERROR] ML prediction failed: {e}")
         return {
             "prediction": -1,
             "probability": 0.0,
