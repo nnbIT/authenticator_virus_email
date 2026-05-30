@@ -1,8 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, HttpUrl
 from urllib.parse import urlparse
-import re
-import joblib
+import re, joblib, csv
 import pandas as pd
 from pathlib import Path
 
@@ -113,10 +112,37 @@ def heuristic_risk_score(url: str) -> dict:
 # MACHINE LEARNING FILTER
 # -----------------------------
 
+# Load whitelist once at module level
+WHITELIST_PATH = Path(__file__).resolve().parent.parent / "backend" / "data" / "raw" / "archive" / "whitelist" / "whitelist.csv"
+SAFE_DOMAINS = set()
+try:
+    with open(WHITELIST_PATH, "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            domain = row.get("domain") or row.get("url") or row.get("host")
+            if domain:
+                SAFE_DOMAINS.add(domain.strip().lower())
+    print(f"✅ Loaded {len(SAFE_DOMAINS)} safe domains from whitelist CSV")
+except Exception as e:
+    print(f"⚠️ Could not load whitelist: {e}")
+
 def ml_predict(url: str) -> dict:
     """
     Convert URL → features → ML prediction with error handling
     """
+    # Extract domain for whitelist check
+    from urllib.parse import urlparse
+    domain = urlparse(url).netloc.lower()
+
+    # Whitelist override (BEFORE any ML)
+    if domain in SAFE_DOMAINS:
+        return {
+            "prediction": 0,
+            "probability": 0.99,
+            "classification": "🟢 Safe (Whitelisted)",
+            "note": f"Domain {domain} is in trusted whitelist"
+        }
+
     try:
         # Check model availability FIRST
         if ml_model is None:
